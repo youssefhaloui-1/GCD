@@ -57,13 +57,13 @@ export const mockApplications: Application[] = mockCandidates.map((candidate, in
 }));
 
 export const mockProgressReports: ProgressReport[] = [
-  { id: "report-01", candidateId: "c1", candidateName: "Khadija El Fassi", year: "2026 / 2027", fileName: "rapport-khadija-2026.pdf", status: "submitted" },
-  { id: "report-02", candidateId: "c2", candidateName: "Omar Benjelloun", year: "2026 / 2027", fileName: "rapport-omar-2026.pdf", status: "supervisor-review" },
-  { id: "report-03", candidateId: "c3", candidateName: "Salma Tazi", year: "2026 / 2027", fileName: "rapport-salma-2026.pdf", status: "cedoc-review" },
+  { id: "report-01", candidateId: "c1", candidateName: "Candidat #001", year: "2026 / 2027", fileName: "rapport-candidat-001.pdf", status: "submitted" },
+  { id: "report-02", candidateId: "c2", candidateName: "Candidat #002", year: "2026 / 2027", fileName: "rapport-candidat-002.pdf", status: "supervisor-review" },
+  { id: "report-03", candidateId: "c3", candidateName: "Candidat #003", year: "2026 / 2027", fileName: "rapport-candidat-003.pdf", status: "cedoc-review" },
 ];
 
 export const mockCommittee: CommitteeMember[] = [
-  { id: "member-01", name: "Pr. Nadia Chafik", role: "Présidente" },
-  { id: "member-02", name: "Pr. Omar Benjelloun", role: "Rapporteur" },
-  { id: "member-03", name: "Dr. Sara Aït Lahcen", role: "Membre CEDOC" },
+  { id: "member-01", name: "Pr. Présidence Commission", role: "Présidente" },
+  { id: "member-02", name: "Pr. Rapporteur Thèse", role: "Rapporteur" },
+  { id: "member-03", name: "Dr. Membre CEDOC", role: "Membre CEDOC" },
 ];

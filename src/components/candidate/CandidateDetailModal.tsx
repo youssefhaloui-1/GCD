@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Award,
   Building,
@@ -45,18 +45,46 @@ export default function CandidateDetailModal({
   onScoreChange,
 }: Props) {
   const [activeTab, setActiveTab] = useState<"dossier" | "pieces" | "statut">("dossier");
+  const [localFiles, setLocalFiles] = useState<Record<string, string | AttachedFile>>(candidate.files || {});
   const [previewDoc, setPreviewDoc] = useState<{ doc: AttachedFile | string; label: string; isVerified: boolean } | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<CandidateStatus>(
     (candidate.status as CandidateStatus) || "received"
   );
   const [score, setScore] = useState<number>(candidate.academicScore || candidate.score || 80);
 
-  const files = candidate.files || {};
-  const fileEntries = Object.entries(files);
+  // Synchronize localFiles if candidate prop updates
+  useEffect(() => {
+    setLocalFiles(candidate.files || {});
+  }, [candidate.files]);
+
+  const fileEntries = Object.entries(localFiles);
 
   const handleStatusApply = (newStatus: CandidateStatus) => {
     setSelectedStatus(newStatus);
     onStatusChange(candidate.id, newStatus);
+  };
+
+  const handleToggleDoc = (docLabel: string) => {
+    setLocalFiles((prev) => {
+      const cur = prev[docLabel];
+      if (!cur) return prev;
+      const updated =
+        typeof cur === "string"
+          ? { name: cur, verified: true }
+          : { ...cur, verified: !cur.verified };
+      return { ...prev, [docLabel]: updated };
+    });
+
+    onToggleDocumentVerify?.(candidate.id, docLabel);
+
+    setPreviewDoc((prev) => {
+      if (!prev || prev.label !== docLabel) return prev;
+      const nextVerified = !prev.isVerified;
+      const updatedDoc = typeof prev.doc === "object"
+        ? { ...prev.doc, verified: nextVerified }
+        : { name: prev.doc, verified: nextVerified };
+      return { ...prev, isVerified: nextVerified, doc: updatedDoc };
+    });
   };
 
   const currentStatusObj = statusOptions.find((s) => s.key === selectedStatus) || statusOptions[0];
@@ -290,7 +318,7 @@ export default function CandidateDetailModal({
                         <button
                           type="button"
                           className={`button ${isVerified ? "button-secondary" : "button-primary"}`}
-                          onClick={() => onToggleDocumentVerify?.(candidate.id, label)}
+                          onClick={() => handleToggleDoc(label)}
                           style={{ height: "32px", padding: "0 10px", fontSize: "11px" }}
                         >
                           <CheckCircle2 size={13} />
@@ -384,10 +412,7 @@ export default function CandidateDetailModal({
           label={previewDoc.label}
           canVerify
           isVerified={previewDoc.isVerified}
-          onToggleVerify={() => {
-            onToggleDocumentVerify?.(candidate.id, previewDoc.label);
-            setPreviewDoc((prev) => prev ? { ...prev, isVerified: !prev.isVerified } : null);
-          }}
+          onToggleVerify={() => handleToggleDoc(previewDoc.label)}
           onClose={() => setPreviewDoc(null)}
         />
       )}

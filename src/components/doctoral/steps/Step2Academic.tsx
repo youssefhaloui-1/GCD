@@ -1,5 +1,5 @@
 import { ChangeEvent, useState } from "react";
-import { Download, Eye, FileCheck, FilePlus, FileText, Plus, Trash2, Upload } from "lucide-react";
+import { Eye, FileCheck, Trash2, Upload } from "lucide-react";
 import type { AcademicDegree, AttachedFile } from "../../../types/doctoral";
 import DocumentViewerModal from "../../common/DocumentViewerModal";
 
@@ -10,11 +10,12 @@ type Props = {
   onDegreeChange: (degree: "bac" | "licence" | "master", key: keyof AcademicDegree, value: string) => void;
   onFile: (event: ChangeEvent<HTMLInputElement>, label: string) => void;
   onRemoveFile?: (label: string) => void;
-  onAddCustomFile?: (label: string) => void;
 };
 
 const labels = { bac: "Baccalauréat", licence: "Licence", master: "Master" };
-const defaultFileLabels = [
+
+// Fixed and predefined required files - strictly restricted without custom addition
+const fixedFileLabels = [
   "Diplôme ou attestation Bac",
   "Diplôme Licence",
   "Diplôme Master",
@@ -32,30 +33,18 @@ export default function Step2Academic({
   onRemoveFile,
 }: Props) {
   const [previewDoc, setPreviewDoc] = useState<{ doc: AttachedFile | string; label: string } | null>(null);
-  const [customSlot, setCustomSlot] = useState("");
-  const [showAddCustom, setShowAddCustom] = useState(false);
-  const [customLabels, setCustomLabels] = useState<string[]>([]);
-
-  const allFileLabels = Array.from(new Set([...defaultFileLabels, ...customLabels, ...Object.keys(files)]));
-
-  const handleAddCustom = () => {
-    if (customSlot.trim() && !allFileLabels.includes(customSlot.trim())) {
-      setCustomLabels((prev) => [...prev, customSlot.trim()]);
-      setCustomSlot("");
-      setShowAddCustom(false);
-    }
-  };
 
   return (
     <div className="wizard-section">
       <div className="wizard-section-heading">
         <div>
           <h3>Parcours académique & Justificatifs</h3>
-          <p>Renseignez vos diplômes et joignez les attestations correspondantes (PDF, JPEG, PNG).</p>
+          <p>Renseignez vos diplômes obligatoires et déposez les justificatifs requis (PDF, JPEG, PNG).</p>
         </div>
         <span className="badge badge-blue">Étape 2 / 4</span>
       </div>
 
+      {/* Fixed Predefined Degrees */}
       {(["bac", "licence", "master"] as const).map((degree) => (
         <div className="academic-block" key={degree}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -82,43 +71,16 @@ export default function Step2Academic({
         </div>
       ))}
 
-      <div style={{ marginTop: "24px", marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-        <div>
-          <strong style={{ fontSize: "13px", display: "block" }}>Pièces jointes & Fiches obligatoires</strong>
-          <span style={{ fontSize: "11px", color: "var(--muted)" }}>
-            Tous les documents téléversés seront vérifiés et certifiés lors de l'instruction du dossier.
-          </span>
-        </div>
-        <button
-          type="button"
-          className="button button-secondary"
-          onClick={() => setShowAddCustom(true)}
-          style={{ height: "32px", fontSize: "11px" }}
-        >
-          <Plus size={14} /> Ajouter une fiche / pièce
-        </button>
+      {/* Fixed Predefined Attachments - Strictly Locked */}
+      <div style={{ marginTop: "24px", marginBottom: "14px" }}>
+        <strong style={{ fontSize: "13px", display: "block" }}>Pièces jointes & Fiches obligatoires</strong>
+        <span style={{ fontSize: "11px", color: "var(--muted)" }}>
+          Champs prédéfinis obligatoires. Chaque document téléversé sera examiné et certifié par la commission.
+        </span>
       </div>
 
-      {showAddCustom && (
-        <div className="card" style={{ padding: "12px 16px", marginBottom: "16px", display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-          <input
-            value={customSlot}
-            onChange={(e) => setCustomSlot(e.target.value)}
-            placeholder="Ex. Attestation de stage, Lettre de recommandation, Fiche signalétique..."
-            style={{ flex: 1, minWidth: "220px", height: "36px", padding: "0 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "12px" }}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddCustom(); } }}
-          />
-          <button type="button" className="button button-primary" onClick={handleAddCustom} style={{ height: "36px", fontSize: "11px" }}>
-            Ajouter ce champ
-          </button>
-          <button type="button" className="button button-secondary" onClick={() => setShowAddCustom(false)} style={{ height: "36px", fontSize: "11px" }}>
-            Annuler
-          </button>
-        </div>
-      )}
-
       <div className="upload-grid">
-        {allFileLabels.map((label) => {
+        {fixedFileLabels.map((label) => {
           const fileEntry = files[label];
           const hasFile = Boolean(fileEntry);
           const fileName = typeof fileEntry === "string" ? fileEntry : fileEntry?.name;
@@ -225,7 +187,7 @@ export default function Step2Academic({
                       color: "#aeb5ff",
                     }}
                   >
-                    <Upload size={12} /> Choisir le document
+                    <Upload size={12} /> Déposer cette pièce
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"

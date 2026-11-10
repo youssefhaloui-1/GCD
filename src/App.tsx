@@ -32,6 +32,10 @@ import {
   Building2,
   X,
   SlidersHorizontal,
+  Trash2,
+  RotateCcw,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import RegistrationWizard from "./components/candidate/RegistrationWizard";
@@ -41,6 +45,7 @@ import SupervisorDashboard from "./components/supervisor/SupervisorDashboard";
 import CommissionDashboard from "./components/project_leader/CommissionDashboard";
 import AdminValidationDashboard from "./components/admin/AdminValidationDashboard";
 import CandidateDetailModal from "./components/candidate/CandidateDetailModal";
+import DeleteConfirmationModal from "./components/candidate/DeleteConfirmationModal";
 import type { ApplicationState, AttachedFile } from "./types/doctoral";
 import { mockTopics } from "./data/mockTopics";
 import {
@@ -154,7 +159,9 @@ function Login({ onLogin }: { onLogin: (email: string, role: Role) => void }) {
       <div className="login-orbit orbit-two" />
       <div className="login-layout">
         <div className="login-intro">
-          <div className="brand-mark"><GraduationCap size={24} /></div>
+          <div className="login-logo-badge">
+            <img src="/logo.jpg" alt="Université Sidi Mohamed Ben Abdellah" className="university-login-logo" />
+          </div>
           <p className="eyebrow">USMBA · CYCLE DOCTORAL</p>
           <h1>Un espace pour <span>chaque rôle.</span></h1>
           <p className="lead">Une plateforme unifiée, avec un parcours et des outils adaptés à chaque acteur du cycle doctoral.</p>
@@ -189,7 +196,7 @@ function Login({ onLogin }: { onLogin: (email: string, role: Role) => void }) {
                   return <div key={label} className={`registration-progress-step ${registrationStep >= step ? "complete" : ""} ${registrationStep === step ? "current" : ""}`}><span>{registrationStep > step ? <Check size={13} /> : step}</span><small>{label}</small></div>;
                 })}
               </div>
-              {registrationStep === 1 && <div className="registration-panel stack"><label>Nom complet<input placeholder="Ex. Amina El Mansouri" /></label><label>Email universitaire<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="prenom.nom@usmba.ac.ma" /></label><div className="form-grid"><label>CNE / CIN<input placeholder="Votre identifiant" /></label><label>Établissement<input placeholder="Université / faculté" /></label></div></div>}
+              {registrationStep === 1 && <div className="registration-panel stack"><label>Nom complet<input placeholder="Ex. Candidat Exemple" /></label><label>Email universitaire<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="prenom.nom@usmba.ac.ma" /></label><div className="form-grid"><label>CNE / CIN<input placeholder="Votre identifiant" /></label><label>Établissement<input placeholder="Université / faculté" /></label></div></div>}
               {registrationStep === 2 && <div className="registration-panel"><div className="subject-selection-heading"><div><strong>Choisissez vos sujets d’intérêt</strong><p>Sélectionnez au moins un sujet, jusqu’à 3 préférences.</p></div><Badge tone="blue">{selectedSubjects.length}/3</Badge></div><div className="search-input registration-search"><Search size={16} /><input value={subjectQuery} onChange={(e) => setSubjectQuery(e.target.value)} placeholder="Rechercher un sujet…" /></div><div className="subject-choice-list">{filteredSubjects.map((subject) => <label className={`subject-choice ${selectedSubjects.includes(subject) ? "selected" : ""}`} key={subject}><input type="checkbox" checked={selectedSubjects.includes(subject)} onChange={() => setSelectedSubjects((current) => current.includes(subject) ? current.filter((item) => item !== subject) : current.length < 3 ? [...current, subject] : current)} /><span>{subject}</span>{selectedSubjects.includes(subject) && <Check size={16} />}</label>)}{filteredSubjects.length === 0 && <p className="empty-choice">Aucun sujet ne correspond à votre recherche.</p>}</div></div>}
               {registrationStep === 3 && <div className="registration-panel document-list"><strong>Pièces de votre dossier</strong><p>Ajoutez les documents demandés pour accélérer l’étude de votre candidature.</p>{["CV détaillé", "Diplôme ou attestation de réussite", "Projet de recherche (PDF)"].map((document) => <label key={document}><span><FileCheck2 size={17} />{document}</span><input type="file" /></label>)}</div>}
               {registrationStep === 4 && <div className="registration-panel confirmation-panel"><div className="success-icon"><CheckCircle2 size={30} /></div><h3>Votre dossier est prêt</h3><p>Vérifiez vos informations et envoyez votre candidature. Vous pourrez suivre chaque validation depuis votre espace.</p><div className="summary-row"><span>Profil</span><strong>{selectedProfile.label}</strong></div><div className="summary-row"><span>Sujets sélectionnés</span><strong>{selectedSubjects.length}</strong></div></div>}
@@ -214,14 +221,65 @@ function Login({ onLogin }: { onLogin: (email: string, role: Role) => void }) {
 function Header({ role, userName, canSwitchRole, onRoleChange, onMenu, notifications, onMarkNotificationsRead }: { role: Role; userName: string; canSwitchRole: boolean; onRoleChange: (role: Role) => void; onMenu: () => void; notifications: NotificationItem[]; onMarkNotificationsRead: () => void }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const unreadCount = notifications.filter((notification) => !notification.read).length;
-  return <header className="topbar">
-    <button className="mobile-menu" onClick={onMenu} aria-label="Ouvrir le menu"><Menu size={21} /></button>
-    <div className="topbar-actions">
-      <div className="notification-wrap"><button className="icon-button notification" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications" aria-expanded={notificationsOpen}><Bell size={18} />{unreadCount > 0 && <i />}</button>{notificationsOpen && <div className="notification-panel"><div className="notification-heading"><strong>Notifications</strong><button onClick={onMarkNotificationsRead}>Tout marquer comme lu</button></div>{notifications.length === 0 ? <p className="notification-empty">Aucune notification.</p> : notifications.map((notification) => <div className={`notification-item ${notification.read ? "read" : ""}`} key={notification.id}><span className={`notification-dot ${notification.tone}`} /><div><strong>{notification.title}</strong><p>{notification.description}</p></div></div>)}</div>}</div>
-      {canSwitchRole ? <RoleSwitcher role={role} onChange={onRoleChange} /> : <div className="role-picker"><span className="role-dot" /><strong>{roleLabels[role]}</strong></div>}
-      <div className="avatar">{userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div>
-    </div>
-  </header>;
+  return (
+    <header className="topbar">
+      <div className="header-left">
+        <button className="mobile-menu" onClick={onMenu} aria-label="Ouvrir le menu">
+          <Menu size={21} />
+        </button>
+        <div className="header-brand-wrap">
+          <img src="/logo.jpg" alt="Université Sidi Mohamed Ben Abdellah" className="header-university-logo" />
+          <div className="header-brand-text">
+            <strong>USMBA</strong>
+            <span>Centre des Études Doctorales</span>
+          </div>
+        </div>
+      </div>
+      <div className="topbar-actions">
+        <div className="notification-wrap">
+          <button
+            className="icon-button notification"
+            onClick={() => setNotificationsOpen((open) => !open)}
+            aria-label="Notifications"
+            aria-expanded={notificationsOpen}
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && <i />}
+          </button>
+          {notificationsOpen && (
+            <div className="notification-panel">
+              <div className="notification-heading">
+                <strong>Notifications</strong>
+                <button onClick={onMarkNotificationsRead}>Tout marquer comme lu</button>
+              </div>
+              {notifications.length === 0 ? (
+                <p className="notification-empty">Aucune notification.</p>
+              ) : (
+                notifications.map((notification) => (
+                  <div className={`notification-item ${notification.read ? "read" : ""}`} key={notification.id}>
+                    <span className={`notification-dot ${notification.tone}`} />
+                    <div>
+                      <strong>{notification.title}</strong>
+                      <p>{notification.description}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+        {canSwitchRole ? (
+          <RoleSwitcher role={role} onChange={onRoleChange} />
+        ) : (
+          <div className="role-picker">
+            <span className="role-dot" />
+            <strong>{roleLabels[role]}</strong>
+          </div>
+        )}
+        <div className="avatar">{userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div>
+      </div>
+    </header>
+  );
 }
 
 function Sidebar({ view, setView, open, role, userName, onLogout, onClose }: { view: View; setView: (view: View) => void; open: boolean; role: Role; userName: string; onLogout: () => void; onClose: () => void }) {
@@ -237,7 +295,9 @@ function Sidebar({ view, setView, open, role, userName, onLogout, onClose }: { v
     {open && <div className="sidebar-backdrop" onClick={onClose} />}
     <aside className={`sidebar ${open ? "open" : ""}`}>
       <div className="sidebar-brand">
-        <div className="brand-mark small"><GraduationCap size={19} /></div>
+        <div className="brand-logo-wrap">
+          <img src="/logo.jpg" alt="USMBA" className="sidebar-university-logo" />
+        </div>
         <div><strong>GCD<span>+</span></strong><small>Gestion du cycle doctoral</small></div>
         <button type="button" className="sidebar-close" onClick={onClose} aria-label="Fermer le volet">
           <PanelLeftClose size={18} />
@@ -255,11 +315,36 @@ function StatCard({ stat }: { stat: DashboardStats }) {
   return <GlassCard className="stat-card"><div className={`stat-icon ${stat.tone}`}><Icon size={19} /></div><div className="stat-copy"><span>{stat.label}</span><strong>{stat.value}</strong><small className={stat.trend.startsWith("+") ? "trend-up" : ""}>{stat.trend}</small></div><MoreHorizontal size={17} className="muted-icon" /></GlassCard>;
 }
 
-function ProfileView({ role, userName, email, applicationData, onNameChange }: { role: Role; userName: string; email: string; applicationData?: ApplicationData; onNameChange: (name: string) => void }) {
+function ProfileView({
+  role,
+  userName,
+  email,
+  applicationData,
+  onNameChange,
+  onDeleteCandidate,
+}: {
+  role: Role;
+  userName: string;
+  email: string;
+  applicationData?: ApplicationData;
+  onNameChange: (name: string) => void;
+  onDeleteCandidate?: () => void;
+}) {
   const [name, setName] = useState(userName);
   const [phone, setPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [saved, setSaved] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const draftData = useMemo(() => {
+    if (applicationData) return null;
+    try {
+      const raw = localStorage.getItem("gcd_candidate_draft");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, [applicationData]);
 
   const saveProfile = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -268,29 +353,496 @@ function ProfileView({ role, userName, email, applicationData, onNameChange }: {
     window.setTimeout(() => setSaved(false), 2500);
   };
 
-  return <div className="page profile-page">
-    <div className="page-heading"><div><p className="eyebrow">ESPACE PERSONNEL</p><h1>Mon profil</h1><p className="subheading">Gérez vos informations et consultez les droits liés à votre rôle.</p></div><Badge tone="green"><ShieldCheck size={14} /> Compte sécurisé</Badge></div>
-    <div className="profile-layout">
-      <GlassCard className="profile-main-card"><div className="profile-cover"><div className="profile-large-avatar">{name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div><div><h2>{name}</h2><p>{roleLabels[role]} · {email}</p></div></div><form className="profile-form" onSubmit={saveProfile}><div className="form-grid"><label>Nom complet<input value={name} onChange={(event) => setName(event.target.value)} /></label><label>Email<input value={email} readOnly /></label><label>Téléphone<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+212 6 00 00 00 00" /></label><label>Rôle<input value={roleLabels[role]} readOnly /></label></div><div className="profile-form-actions"><button className="button button-primary" type="submit"><Save size={16} /> Enregistrer</button>{saved && <Badge tone="green"><Check size={13} /> Informations enregistrées</Badge>}</div></form></GlassCard>
-      <GlassCard className="profile-side-card"><div className="section-heading"><div><h2>Mes droits d’accès</h2><p>Modules disponibles pour votre rôle</p></div></div><div className="permission-list">{roleViews[role].filter((view) => view !== "profile").map((view) => <div className="permission-item" key={view}><CheckCircle2 size={16} /><span>{view === "dashboard" ? "Tableau de bord" : view === "subjects" ? "Sujets de recherche" : view === "candidates" ? "Gestion des candidatures" : "Réinscription"}</span></div>)}</div></GlassCard>
-      <GlassCard className="profile-security-card"><div className="section-heading"><div><h2>Sécurité</h2><p>Le mot de passe est conservé localement pour cette démonstration.</p></div></div><label className="security-field">Nouveau mot de passe<input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="6 caractères minimum" /></label><button className="button button-secondary" disabled={newPassword.length < 6} onClick={() => setNewPassword("")}>Mettre à jour le mot de passe</button></GlassCard>
-      {role === "candidat" && <GlassCard className="profile-application-card"><div className="section-heading"><div><h2>Ma candidature</h2><p>Accès rapide à votre dossier doctoral</p></div></div>{applicationData ? <><div className="profile-application-status"><Badge tone="amber">En cours de traitement</Badge><span>{applicationData.selectedSubjects.length} sujet(s) · {applicationData.university}</span></div><p className="profile-application-subject">{applicationData.selectedSubjects.join(" · ")}</p></> : <p className="profile-empty">Aucune candidature envoyée pour le moment.</p>}</GlassCard>}
+  return (
+    <div className="page profile-page">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">ESPACE PERSONNEL</p>
+          <h1>Mon profil</h1>
+          <p className="subheading">Gérez vos informations et consultez les droits liés à votre rôle.</p>
+        </div>
+        <Badge tone="green"><ShieldCheck size={14} /> Compte sécurisé</Badge>
+      </div>
+
+      <div className="profile-layout">
+        <GlassCard className="profile-main-card">
+          <div className="profile-cover">
+            <div className="profile-large-avatar">
+              {name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h2>{name}</h2>
+              <p>{roleLabels[role]} · {email}</p>
+            </div>
+          </div>
+          <form className="profile-form" onSubmit={saveProfile}>
+            <div className="form-grid">
+              <label>Nom complet<input value={name} onChange={(event) => setName(event.target.value)} /></label>
+              <label>Email<input value={email} readOnly /></label>
+              <label>Téléphone<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+212 6 00 00 00 00" /></label>
+              <label>Rôle<input value={roleLabels[role]} readOnly /></label>
+            </div>
+            <div className="profile-form-actions">
+              <button className="button button-primary" type="submit"><Save size={16} /> Enregistrer</button>
+              {saved && <Badge tone="green"><Check size={13} /> Informations enregistrées</Badge>}
+            </div>
+          </form>
+        </GlassCard>
+
+        <GlassCard className="profile-side-card">
+          <div className="section-heading">
+            <div>
+              <h2>Mes droits d’accès</h2>
+              <p>Modules disponibles pour votre rôle</p>
+            </div>
+          </div>
+          <div className="permission-list">
+            {roleViews[role].filter((view) => view !== "profile").map((view) => (
+              <div className="permission-item" key={view}>
+                <CheckCircle2 size={16} />
+                <span>
+                  {view === "dashboard" ? "Tableau de bord" : view === "subjects" ? "Sujets de recherche" : view === "candidates" ? "Gestion des candidatures" : "Réinscription"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+        <GlassCard className="profile-security-card">
+          <div className="section-heading">
+            <div>
+              <h2>Sécurité</h2>
+              <p>Le mot de passe est conservé localement pour cette démonstration.</p>
+            </div>
+          </div>
+          <label className="security-field">
+            Nouveau mot de passe
+            <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="6 caractères minimum" />
+          </label>
+          <button className="button button-secondary" disabled={newPassword.length < 6} onClick={() => setNewPassword("")}>
+            Mettre à jour le mot de passe
+          </button>
+        </GlassCard>
+
+        {role === "candidat" && (
+          <GlassCard className="profile-application-card">
+            <div className="section-heading">
+              <div>
+                <h2>Ma candidature doctorale</h2>
+                <p>État du dossier et gestion</p>
+              </div>
+            </div>
+            {applicationData ? (
+              <>
+                <div className="profile-application-status">
+                  <Badge tone="green">Candidature transmise</Badge>
+                  <span>{applicationData.selectedSubjects.length} sujet(s) · {applicationData.university}</span>
+                </div>
+                <p className="profile-application-subject">{applicationData.selectedSubjects.join(" · ")}</p>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => setShowDeleteModal(true)}
+                  style={{ color: "#ff8296", marginTop: "14px", width: "100%", fontSize: "11px" }}
+                >
+                  <Trash2 size={13} /> Supprimer définitivement ma candidature
+                </button>
+              </>
+            ) : draftData ? (
+              <>
+                <div className="profile-application-status">
+                  <Badge tone="amber">Non complété (Brouillon)</Badge>
+                  <span>Sauvegardé à {draftData.lastSaved || "récemment"}</span>
+                </div>
+                <p className="profile-application-subject">Un brouillon a été automatiquement sauvegardé sur cet appareil.</p>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => setShowDeleteModal(true)}
+                  style={{ color: "#ff8296", marginTop: "14px", width: "100%", fontSize: "11px" }}
+                >
+                  <Trash2 size={13} /> Supprimer définitivement ce brouillon
+                </button>
+              </>
+            ) : (
+              <p className="profile-empty">Aucune candidature enregistrée pour le moment.</p>
+            )}
+          </GlassCard>
+        )}
+      </div>
+
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => {
+          setShowDeleteModal(false);
+          onDeleteCandidate?.();
+        }}
+        candidateName={applicationData?.fullName || draftData?.personal?.fullName || userName}
+        isDraft={Boolean(draftData && !applicationData)}
+        title={applicationData ? "Suppression définitive de votre candidature" : "Suppression définitive du brouillon"}
+        message={
+          applicationData
+            ? "Êtes-vous sûr de vouloir supprimer définitivement votre candidature ? Cette action est irréversible et supprimera votre dossier ainsi que tous vos diplômes et justificatifs téléversés."
+            : "Êtes-vous sûr de vouloir supprimer définitivement ce brouillon ?"
+        }
+      />
     </div>
-  </div>;
+  );
 }
 
-function Dashboard({ onNavigate, role, userName, onApply, onEditApplication, applicationData, candidatesCount }: { onNavigate: (view: View) => void; role: Role; userName: string; onApply: () => void; onEditApplication: () => void; applicationData?: ApplicationData; candidatesCount: number }) {
+function Dashboard({
+  onNavigate,
+  role,
+  userName,
+  onApply,
+  onEditApplication,
+  applicationData,
+  candidatesCount,
+  onDeleteApplication,
+}: {
+  onNavigate: (view: View) => void;
+  role: Role;
+  userName: string;
+  onApply: () => void;
+  onEditApplication: () => void;
+  applicationData?: ApplicationData;
+  candidatesCount: number;
+  onDeleteApplication?: () => void;
+}) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const applicationSubmitted = Boolean(applicationData);
-  if (role === "candidat") return <div className="page"><div className="page-heading"><div><p className="eyebrow">ESPACE CANDIDAT</p><h1>Bonjour, {userName} <span>👋</span></h1><p className="subheading">Déposez votre demande de sujet, téléversez vos diplômes et suivez son traitement.</p></div>{!applicationSubmitted && <button className="button button-primary" onClick={onApply}><BookOpen size={17} /> Déposer une candidature</button>}</div><div className="candidate-home-grid"><GlassCard className="candidate-apply-card"><div className="side-icon"><BookOpen size={20} /></div><h2>{applicationSubmitted ? "Demande en cours de traitement" : "Votre candidature doctorale"}</h2><p>{applicationSubmitted ? "Votre dossier complet avec vos diplômes et pièces justificatives a été transmis aux commissions." : "Renseignez votre parcours, téléversez vos diplômes (Bac, Licence, Master) et choisissez jusqu’à 3 sujets de thèse."}</p>{applicationSubmitted ? <button className="button button-secondary" onClick={onEditApplication}>Consulter / modifier ma candidature <ArrowRight size={16} /></button> : <button className="button button-primary" onClick={onApply}>Commencer ma candidature <ArrowRight size={16} /></button>}</GlassCard><GlassCard className="candidate-status-card"><p className="eyebrow">SUIVI DU DOSSIER EN DIRECT</p>{applicationSubmitted ? <><h2>Dossier transmis · {applicationData?.fullName}</h2><div className="candidate-progress-list">{["Informations personnelles", "Diplômes & Justificatifs téléversés", "Choix du sujet doctoral", "Instruction par la commission"].map((label, index) => <div className={`candidate-progress-item ${index < 3 ? "complete" : "current"}`} key={label}><span>{index < 3 ? <Check size={13} /> : index + 1}</span><div><strong>{label}</strong><small>{index < 3 ? "Terminé" : "En cours d'examen"}</small></div></div>)}</div></> : <><h2>Aucune candidature déposée</h2><p>Votre progression en temps réel apparaîtra ici après l’envoi de votre dossier.</p></>}</GlassCard></div></div>;
-  return <div className="page">
-    <div className="page-heading"><div><p className="eyebrow">ESPACE {roleLabels[role].toUpperCase()}</p><h1>Bonjour {userName} <span>👋</span></h1><p className="subheading">Gérez les candidatures, contrôlez les diplômes et validez les étapes du cycle doctoral.</p></div>{role !== "chef-projet" && <button className="button button-secondary" onClick={() => onNavigate("reregistration")}><ClipboardCheck size={17} /> Réinscriptions</button>}</div>
-    <div className="stats-grid">{dashboardStats.map((stat) => <StatCard key={stat.label} stat={stat.label === "Dossiers en attente" ? { ...stat, value: String(candidatesCount).padStart(2, "0") } : stat} />)}</div>
-    <div className="content-grid dashboard-grid">
-      <GlassCard className="activity-card"><div className="section-heading"><div><h2>À traiter maintenant</h2><p>Les actions prioritaires de votre espace</p></div><button className="text-button" onClick={() => onNavigate("candidates")}>Tout voir <ArrowRight size={14} /></button></div><div className="task-list"><div className="task-item"><div className="task-icon amber"><FileCheck2 size={18} /></div><div><strong>Valider le rapport annuel de Yassine B.</strong><span>Réinscription · reçu il y a 2 h</span></div><Badge tone="amber">À valider</Badge><button className="round-arrow"><ArrowRight size={15} /></button></div><div className="task-item"><div className="task-icon violet"><BookOpen size={18} /></div><div><strong>3 sujets attendent votre avis</strong><span>Étape 1 sur 3 · Centre CED</span></div><Badge tone="violet">En cours</Badge><button className="round-arrow" onClick={() => onNavigate("subjects")}><ArrowRight size={15} /></button></div><div className="task-item"><div className="task-icon green"><Users size={18} /></div><div><strong>{candidatesCount} dossiers de candidatures</strong><span>Consultez les pièces et gérez les statuts</span></div><Badge tone="green">Actif</Badge><button className="round-arrow" onClick={() => onNavigate("candidates")}><ArrowRight size={15} /></button></div></div></GlassCard>
-      <GlassCard className="deadline-card"><div className="section-heading"><div><h2>Prochains oraux & Commissions</h2><p>Votre agenda doctoral</p></div></div><div className="calendar-date"><strong>NOV</strong><span>15</span><small>LUN</small></div><div className="deadline-info"><strong>Entretiens de sélection</strong><span>Candidats retenus · Salle des commissions</span><div className="people-stack"><span>KF</span><span>OB</span><span>+4</span></div></div><div className="deadline-time"><strong>09:00</strong><span>cette semaine</span></div></GlassCard>
+
+  const draftData = useMemo(() => {
+    if (applicationSubmitted) return null;
+    try {
+      const raw = localStorage.getItem("gcd_candidate_draft");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, [applicationSubmitted, applicationData]);
+
+  const hasDraft = Boolean(draftData);
+
+  if (role === "candidat") {
+    return (
+      <div className="page">
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">ESPACE CANDIDAT · PORTAIL DOCTORAL</p>
+            <h1>Bonjour, {userName} <span>👋</span></h1>
+            <p className="subheading">
+              {applicationSubmitted
+                ? "Votre candidature est enregistrée et en cours d'instruction par les commissions."
+                : hasDraft
+                ? "Votre dossier est en cours de saisie (sauvegarde automatique active)."
+                : "Déposez votre candidature, téléversez vos diplômes et suivez son traitement."}
+            </p>
+          </div>
+          <div>
+            {applicationSubmitted ? (
+              <Badge tone="green"><CheckCircle2 size={13} /> Candidature transmise</Badge>
+            ) : hasDraft ? (
+              <Badge tone="amber"><Clock3 size={13} /> Non complété (Brouillon)</Badge>
+            ) : (
+              <button className="button button-primary" onClick={onApply}>
+                <BookOpen size={17} /> Déposer une candidature
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Offline / Autosave Banner */}
+        {hasDraft && !applicationSubmitted && (
+          <div
+            style={{
+              padding: "12px 18px",
+              background: "rgba(242, 191, 117, 0.1)",
+              border: "1px solid rgba(242, 191, 117, 0.3)",
+              borderRadius: "12px",
+              marginBottom: "18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <RotateCcw size={18} color="#f2bf75" />
+              <div>
+                <strong style={{ fontSize: "12px", color: "var(--text)" }}>Brouillon sauvegardé automatiquement</strong>
+                <p style={{ fontSize: "11px", color: "var(--muted)", margin: "2px 0 0" }}>
+                  Dernière sauvegarde locale à <strong>{draftData?.lastSaved || "récemment"}</strong>. Si vous fermez la page ou perdez la connexion, vos informations et diplômes restent conservés.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button className="button button-primary" onClick={onApply} style={{ height: "32px", fontSize: "11px" }}>
+                <RotateCcw size={13} /> Reprendre le dossier
+              </button>
+              <button
+                className="button button-secondary"
+                style={{ height: "32px", fontSize: "11px", color: "#ff8296" }}
+                onClick={() => setShowDeleteModal(true)}
+              >
+                <Trash2 size={13} /> Supprimer
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="candidate-home-grid">
+          <GlassCard className="candidate-apply-card">
+            <div className="side-icon">
+              {hasDraft ? <RotateCcw size={20} /> : <BookOpen size={20} />}
+            </div>
+            <h2>
+              {applicationSubmitted
+                ? "Dossier transmis avec succès"
+                : hasDraft
+                ? "Brouillon en cours de finalisation"
+                : "Votre candidature doctorale"}
+            </h2>
+            <p>
+              {applicationSubmitted
+                ? "Votre dossier complet avec vos diplômes et justificatifs a été transmis aux commissions. Vous pouvez consulter les détails ou le supprimer définitivement."
+                : hasDraft
+                ? `Vous avez déjà commencé à compléter votre candidature (étape ${draftData?.step || 1} sur 4). Cliquez ci-dessous pour reprendre là où vous vous étiez arrêté.`
+                : "Renseignez votre parcours, téléversez vos diplômes (Bac, Licence, Master) et choisissez jusqu’à 3 sujets de thèse."}
+            </p>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "12px" }}>
+              {applicationSubmitted ? (
+                <>
+                  <button className="button button-secondary" onClick={onEditApplication}>
+                    Consulter / modifier ma candidature <ArrowRight size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setShowDeleteModal(true)}
+                    style={{ color: "#ff8296", border: "1px solid rgba(255, 130, 150, 0.3)" }}
+                  >
+                    <Trash2 size={15} /> Supprimer définitivement ma candidature
+                  </button>
+                </>
+              ) : hasDraft ? (
+                <>
+                  <button className="button button-primary" onClick={onApply}>
+                    <RotateCcw size={16} /> Reprendre et finaliser ma candidature <ArrowRight size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setShowDeleteModal(true)}
+                    style={{ color: "#ff8296" }}
+                  >
+                    <Trash2 size={15} /> Supprimer ce brouillon
+                  </button>
+                </>
+              ) : (
+                <button className="button button-primary" onClick={onApply}>
+                  Commencer ma candidature <ArrowRight size={16} />
+                </button>
+              )}
+            </div>
+          </GlassCard>
+
+          <GlassCard className="candidate-status-card">
+            <p className="eyebrow">
+              {applicationSubmitted ? "SUIVI DU DOSSIER EN DIRECT" : "ÉTAT DU BROUILLON"}
+            </p>
+            {applicationSubmitted ? (
+              <>
+                <h2>Dossier transmis · {applicationData?.fullName}</h2>
+                <div className="candidate-progress-list">
+                  {["Informations personnelles", "Diplômes & Justificatifs téléversés", "Choix du sujet doctoral", "Instruction par la commission"].map((label, index) => (
+                    <div className={`candidate-progress-item ${index < 3 ? "complete" : "current"}`} key={label}>
+                      <span>{index < 3 ? <Check size={13} /> : index + 1}</span>
+                      <div>
+                        <strong>{label}</strong>
+                        <small>{index < 3 ? "Terminé" : "En cours d'examen"}</small>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : hasDraft ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h2>Statut : Non complété</h2>
+                  <span className="badge badge-amber">Brouillon</span>
+                </div>
+                <div className="candidate-progress-list">
+                  <div className={`candidate-progress-item ${draftData?.personal?.fullName ? "complete" : "current"}`}>
+                    <span>{draftData?.personal?.fullName ? <Check size={13} /> : 1}</span>
+                    <div>
+                      <strong>Profil personnel</strong>
+                      <small>{draftData?.personal?.fullName ? draftData.personal.fullName : "À compléter"}</small>
+                    </div>
+                  </div>
+                  <div className={`candidate-progress-item ${Object.keys(draftData?.files || {}).length > 0 ? "complete" : "current"}`}>
+                    <span>{Object.keys(draftData?.files || {}).length > 0 ? <Check size={13} /> : 2}</span>
+                    <div>
+                      <strong>Parcours & Diplômes</strong>
+                      <small>{Object.keys(draftData?.files || {}).length} pièce(s) jointe(s)</small>
+                    </div>
+                  </div>
+                  <div className={`candidate-progress-item ${(draftData?.selectedSubjects?.length || 0) > 0 ? "complete" : ""}`}>
+                    <span>{(draftData?.selectedSubjects?.length || 0) > 0 ? <Check size={13} /> : 3}</span>
+                    <div>
+                      <strong>Sujets de recherche</strong>
+                      <small>{draftData?.selectedSubjects?.length || 0} sujet(s) sélectionné(s)</small>
+                    </div>
+                  </div>
+                  <div className="candidate-progress-item">
+                    <span>4</span>
+                    <div>
+                      <strong>Transmission définitive</strong>
+                      <small style={{ color: "#efbf76" }}>En attente de validation</small>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2>Aucune candidature déposée</h2>
+                <p>Votre progression en temps réel et vos sauvegardes automatiques apparaîtront ici.</p>
+              </>
+            )}
+          </GlassCard>
+        </div>
+
+        <DeleteConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => {
+            setShowDeleteModal(false);
+            onDeleteApplication?.();
+          }}
+          candidateName={applicationData?.fullName || draftData?.personal?.fullName || userName}
+          isDraft={hasDraft && !applicationSubmitted}
+          title={
+            applicationSubmitted
+              ? "Suppression définitive de votre candidature"
+              : "Suppression définitive du brouillon"
+          }
+          message={
+            applicationSubmitted
+              ? "Êtes-vous sûr de vouloir supprimer définitivement votre candidature ? Cette action est irréversible et supprimera l'ensemble de votre dossier ainsi que vos fichiers associés."
+              : "Êtes-vous sûr de vouloir supprimer définitivement ce brouillon et réinitialiser toutes les données saisies ?"
+          }
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">ESPACE {roleLabels[role].toUpperCase()}</p>
+          <h1>Bonjour {userName} <span>👋</span></h1>
+          <p className="subheading">Gérez les candidatures, contrôlez les diplômes et validez les étapes du cycle doctoral.</p>
+        </div>
+        {role !== "chef-projet" && (
+          <button className="button button-secondary" onClick={() => onNavigate("reregistration")}>
+            <ClipboardCheck size={17} /> Réinscriptions
+          </button>
+        )}
+      </div>
+      <div className="stats-grid">
+        {dashboardStats.map((stat) => (
+          <StatCard
+            key={stat.label}
+            stat={stat.label === "Dossiers en attente" ? { ...stat, value: String(candidatesCount).padStart(2, "0") } : stat}
+          />
+        ))}
+      </div>
+      <div className="content-grid dashboard-grid">
+        <GlassCard className="activity-card">
+          <div className="section-heading">
+            <div>
+              <h2>À traiter maintenant</h2>
+              <p>Les actions prioritaires de votre espace</p>
+            </div>
+            <button className="text-button" onClick={() => onNavigate("candidates")}>
+              Tout voir <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="task-list">
+            <div className="task-item">
+              <div className="task-icon amber"><FileCheck2 size={18} /></div>
+              <div>
+                <strong>Valider le rapport annuel de Doctorant #001</strong>
+                <span>Réinscription · reçu il y a 2 h</span>
+              </div>
+              <Badge tone="amber">À valider</Badge>
+              <button className="round-arrow"><ArrowRight size={15} /></button>
+            </div>
+            <div className="task-item">
+              <div className="task-icon violet"><BookOpen size={18} /></div>
+              <div>
+                <strong>3 sujets attendent votre avis</strong>
+                <span>Étape 1 sur 3 · Centre CED</span>
+              </div>
+              <Badge tone="violet">En cours</Badge>
+              <button className="round-arrow" onClick={() => onNavigate("subjects")}><ArrowRight size={15} /></button>
+            </div>
+            <div className="task-item">
+              <div className="task-icon green"><Users size={18} /></div>
+              <div>
+                <strong>{candidatesCount} dossiers de candidatures</strong>
+                <span>Consultez les pièces et gérez les statuts</span>
+              </div>
+              <Badge tone="green">Actif</Badge>
+              <button className="round-arrow" onClick={() => onNavigate("candidates")}><ArrowRight size={15} /></button>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="deadline-card">
+          <div className="section-heading">
+            <div>
+              <h2>Prochains oraux & Commissions</h2>
+              <p>Votre agenda doctoral</p>
+            </div>
+          </div>
+          <div className="calendar-date"><strong>NOV</strong><span>15</span><small>LUN</small></div>
+          <div className="deadline-info">
+            <strong>Entretiens de sélection</strong>
+            <span>Candidats retenus · Salle des commissions</span>
+            <div className="people-stack"><span>KF</span><span>OB</span><span>+4</span></div>
+          </div>
+          <div className="deadline-time"><strong>09:00</strong><span>cette semaine</span></div>
+        </GlassCard>
+      </div>
+      <GlassCard className="recent-card">
+        <div className="section-heading">
+          <div>
+            <h2>Activité récente</h2>
+            <p>Les dernières mises à jour du registre doctoral</p>
+          </div>
+          <button className="text-button">Voir l’historique <ArrowRight size={14} /></button>
+        </div>
+        <div className="activity-feed">
+          {activities.map((item) => (
+            <div className="feed-row" key={item.id}>
+              <div className={`feed-icon ${item.tone}`}>
+                {item.icon === "check" ? <CheckCircle2 size={17} /> : item.icon === "subject" ? <BookOpen size={17} /> : <Users size={17} />}
+              </div>
+              <div>
+                <strong>{item.title}</strong>
+                <span>{item.description}</span>
+              </div>
+              <time>{item.time}</time>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
     </div>
-    <GlassCard className="recent-card"><div className="section-heading"><div><h2>Activité récente</h2><p>Les dernières mises à jour du registre doctoral</p></div><button className="text-button">Voir l’historique <ArrowRight size={14} /></button></div><div className="activity-feed">{activities.map((item) => <div className="feed-row" key={item.id}><div className={`feed-icon ${item.tone}`}>{item.icon === "check" ? <CheckCircle2 size={17} /> : item.icon === "subject" ? <BookOpen size={17} /> : <Users size={17} />}</div><div><strong>{item.title}</strong><span>{item.description}</span></div><time>{item.time}</time></div>)}</div></GlassCard>
-  </div>;
+  );
 }
 
 function SearchBar({ query, setQuery, showFilters, setShowFilters }: { query: string; setQuery: (value: string) => void; showFilters: boolean; setShowFilters: (value: boolean) => void }) {
@@ -580,7 +1132,7 @@ function ReregistrationView() {
       : step === 3
         ? "Votre dossier numérique est complet. Déposez les pièces originales au bureau d’ordre."
         : "Générez un QR code unique pour accélérer la réception.";
-  return <div className="page"><div className="page-heading"><div><p className="eyebrow">PARCOURS DOCTORAL · ANNÉE 3</p><h1>Réinscription</h1><p className="subheading">Un workflow hybride, guidé de la saisie jusqu’au bureau d’ordre.</p></div><Badge tone="green"><CheckCircle2 size={14} /> Dossier ouvert</Badge></div><div className="rereg-layout"><GlassCard className="workflow-card"><div className="workflow-progress">{steps.map((label, index) => <div className={`workflow-step ${index + 1 <= step ? "active" : ""}`} key={label}><span>{index + 1 < step ? <Check size={14} /> : index + 1}</span><div><strong>{label}</strong><small>{index + 1 < step ? "Terminé" : index + 1 === step ? "En cours" : "À venir"}</small></div></div>)}</div><div className="workflow-content">{done ? <div className="success-panel"><div className="success-icon"><QrCode size={38} /></div><p className="eyebrow">RÉCÉPISSÉ NUMÉRIQUE</p><h2>Votre dossier est prêt.</h2><p>Présentez ce QR code au bureau d’ordre pour synchroniser la réception physique.</p><div className="qr-placeholder"><QrCode size={106} /></div><strong>GCD-2026-00482</strong><button className="button button-primary button-wide"><Download size={16} /> Télécharger le récépissé</button></div> : <><div className="workflow-title"><div><h2>{steps[step - 1]}</h2><p>{workflowDescription}</p></div><span className="completion">{Math.round((step / steps.length) * 100)}%</span></div>{step === 1 && <div className="form-grid"><label>Avancement de la thèse<textarea defaultValue="Les travaux portent sur l’analyse des données collectées au sein du laboratoire."></textarea></label><label>Publications / communications<textarea placeholder="Ajoutez vos productions de l’année…"></textarea></label><label>Prochain objectif<input placeholder="Ex. Soumission de l’article et expérimentation finale" /></label><label>Demande de dérogation<select><option>Aucune dérogation</option><option>Dérogation année supplémentaire</option></select></label></div>}{step === 2 && <div className="review-callout"><CheckCircle2 size={22} /><div><strong>Rapport prêt pour signature</strong><p>Une notification sera envoyée à Pr. Amina El Mansouri. Vous pourrez suivre son avis depuis votre espace.</p></div><Badge tone="amber">En attente</Badge></div>}{step === 3 && <div className="physical-checklist">{["Rapport signé par l’encadrant", "Copie CIN / carte étudiant", "Attestation de couverture médicale"].map((item) => <label key={item}><input type="checkbox" defaultChecked /> <span>{item}</span><Check size={16} /></label>)}</div>}{step === 4 && <div className="review-callout green"><QrCode size={25} /><div><strong>Tout est prêt pour le récépissé</strong><p>Le QR code contiendra la référence, la date et l’empreinte de votre dossier.</p></div></div>}<div className="modal-actions"><button className="button button-secondary" disabled={step === 1} onClick={() => setStep(step - 1)}>Retour</button><button className="button button-primary" onClick={() => step === 4 ? setDone(true) : setStep(step + 1)}>{step === 4 ? "Générer le récépissé" : "Enregistrer et continuer"} <ArrowRight size={16} /></button></div></>}</div></GlassCard><GlassCard className="rereg-side"><div className="side-icon"><ShieldCheck size={20} /></div><h3>Éligibilité automatisée</h3><p>Votre progression est calculée à partir des activités déclarées et des validations reçues.</p><div className="eligibility"><div><span>Crédits de formation</span><strong>18 / 20</strong></div><div className="progress-line"><span style={{ width: "90%" }} /></div><div><span>Pièces justificatives</span><strong>4 / 4</strong></div><div className="progress-line green"><span style={{ width: "100%" }} /></div></div><div className="next-deadline"><Clock3 size={16} /><span>Date limite de dépôt<strong>15 novembre 2026</strong></span></div></GlassCard></div></div>;
+  return <div className="page"><div className="page-heading"><div><p className="eyebrow">PARCOURS DOCTORAL · ANNÉE 3</p><h1>Réinscription</h1><p className="subheading">Un workflow hybride, guidé de la saisie jusqu’au bureau d’ordre.</p></div><Badge tone="green"><CheckCircle2 size={14} /> Dossier ouvert</Badge></div><div className="rereg-layout"><GlassCard className="workflow-card"><div className="workflow-progress">{steps.map((label, index) => <div className={`workflow-step ${index + 1 <= step ? "active" : ""}`} key={label}><span>{index + 1 < step ? <Check size={14} /> : index + 1}</span><div><strong>{label}</strong><small>{index + 1 < step ? "Terminé" : index + 1 === step ? "En cours" : "À venir"}</small></div></div>)}</div><div className="workflow-content">{done ? <div className="success-panel"><div className="success-icon"><QrCode size={38} /></div><p className="eyebrow">RÉCÉPISSÉ NUMÉRIQUE</p><h2>Votre dossier est prêt.</h2><p>Présentez ce QR code au bureau d’ordre pour synchroniser la réception physique.</p><div className="qr-placeholder"><QrCode size={106} /></div><strong>GCD-2026-00482</strong><button className="button button-primary button-wide"><Download size={16} /> Télécharger le récépissé</button></div> : <><div className="workflow-title"><div><h2>{steps[step - 1]}</h2><p>{workflowDescription}</p></div><span className="completion">{Math.round((step / steps.length) * 100)}%</span></div>{step === 1 && <div className="form-grid"><label>Avancement de la thèse<textarea defaultValue="Les travaux portent sur l’analyse des données collectées au sein du laboratoire."></textarea></label><label>Publications / communications<textarea placeholder="Ajoutez vos productions de l’année…"></textarea></label><label>Prochain objectif<input placeholder="Ex. Soumission de l’article et expérimentation finale" /></label><label>Demande de dérogation<select><option>Aucune dérogation</option><option>Dérogation année supplémentaire</option></select></label></div>}{step === 2 && <div className="review-callout"><CheckCircle2 size={22} /><div><strong>Rapport prêt pour signature</strong><p>Une notification sera envoyée à Pr. Encadrant Référent. Vous pourrez suivre son avis depuis votre espace.</p></div><Badge tone="amber">En attente</Badge></div>}{step === 3 && <div className="physical-checklist">{["Rapport signé par l’encadrant", "Copie CIN / carte étudiant", "Attestation de couverture médicale"].map((item) => <label key={item}><input type="checkbox" defaultChecked /> <span>{item}</span><Check size={16} /></label>)}</div>}{step === 4 && <div className="review-callout green"><QrCode size={25} /><div><strong>Tout est prêt pour le récépissé</strong><p>Le QR code contiendra la référence, la date et l’empreinte de votre dossier.</p></div></div>}<div className="modal-actions"><button className="button button-secondary" disabled={step === 1} onClick={() => setStep(step - 1)}>Retour</button><button className="button button-primary" onClick={() => step === 4 ? setDone(true) : setStep(step + 1)}>{step === 4 ? "Générer le récépissé" : "Enregistrer et continuer"} <ArrowRight size={16} /></button></div></>}</div></GlassCard><GlassCard className="rereg-side"><div className="side-icon"><ShieldCheck size={20} /></div><h3>Éligibilité automatisée</h3><p>Votre progression est calculée à partir des activités déclarées et des validations reçues.</p><div className="eligibility"><div><span>Crédits de formation</span><strong>18 / 20</strong></div><div className="progress-line"><span style={{ width: "90%" }} /></div><div><span>Pièces justificatives</span><strong>4 / 4</strong></div><div className="progress-line green"><span style={{ width: "100%" }} /></div></div><div className="next-deadline"><Clock3 size={16} /><span>Date limite de dépôt<strong>15 novembre 2026</strong></span></div></GlassCard></div></div>;
 }
 
 export default function App() {
@@ -594,11 +1146,25 @@ export default function App() {
   const [applicationOpen, setApplicationOpen] = useState(false);
   const [applicationData, setApplicationData] = useState<ApplicationData>();
 
-  // Shared synchronized candidates state (with localStorage persistence)
+  // Shared synchronized candidates state (with localStorage persistence and legacy migration)
   const [candidates, setCandidates] = useState<Candidate[]>(() => {
     try {
       const stored = localStorage.getItem("gcd_candidates_data");
-      return stored ? JSON.parse(stored) : seedCandidates;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const hasLegacyNames = Array.isArray(parsed) && parsed.some((c: any) =>
+          c.fullName?.includes("Salma") ||
+          c.fullName?.includes("Bennis") ||
+          c.fullName?.includes("Khadija") ||
+          c.fullName?.includes("Benjelloun") ||
+          c.name?.includes("Khadija") ||
+          c.name?.includes("Tazi")
+        );
+        if (!hasLegacyNames) {
+          return parsed;
+        }
+      }
+      return seedCandidates;
     } catch {
       return seedCandidates;
     }
@@ -616,7 +1182,7 @@ export default function App() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     { id: "n1", title: "3 sujets attendent votre avis", description: "Ouvrez le module Sujets de recherche pour traiter les validations.", tone: "amber", read: false },
     { id: "n2", title: "Dossier reçu", description: "Une nouvelle candidature est disponible dans votre espace.", tone: "blue", read: false },
-    { id: "n3", title: "Rapport annuel validé", description: "La réinscription de Yassine Benslimane a été mise à jour.", tone: "green", read: true },
+    { id: "n3", title: "Rapport annuel validé", description: "La réinscription de Doctorant #001 a été mise à jour.", tone: "green", read: true },
   ]);
 
   // Handler for flexible status changes on any candidate
@@ -712,6 +1278,59 @@ export default function App() {
     ]);
   };
 
+  // Offline connectivity detection
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Definitive deletion of candidate application and/or draft
+  const handleDefinitiveDeleteCandidate = (candidateCneOrId?: string) => {
+    // 1. Clear local draft
+    try {
+      localStorage.removeItem("gcd_candidate_draft");
+    } catch {
+      // Ignore
+    }
+
+    // 2. Clear active application state
+    const targetCne = candidateCneOrId || applicationData?.cne;
+    const targetName = applicationData?.fullName;
+    setApplicationData(undefined);
+    setApplicationOpen(false);
+
+    // 3. Remove candidate from shared database/state
+    if (targetCne || targetName) {
+      setCandidates((prev) =>
+        prev.filter((c) => {
+          if (targetCne && (c.cne === targetCne || c.id === targetCne)) return false;
+          if (targetName && (c.fullName === targetName || c.name === targetName)) return false;
+          return true;
+        })
+      );
+    }
+
+    // 4. Add confirmation notification
+    setNotifications((prev) => [
+      {
+        id: `notif-${Date.now()}`,
+        title: "Candidature supprimée définitivement",
+        description: "L'ensemble de votre dossier et toutes les pièces justificatives associées ont été supprimés.",
+        tone: "amber",
+        read: false,
+      },
+      ...prev,
+    ]);
+  };
+
   const allowedView = roleViews[role].includes(view) ? view : "dashboard";
 
   const roleDashboard = role === "candidat" ? (
@@ -723,6 +1342,7 @@ export default function App() {
       onApply={() => setApplicationOpen(true)}
       onEditApplication={() => setApplicationOpen(true)}
       candidatesCount={candidates.length}
+      onDeleteApplication={() => handleDefinitiveDeleteCandidate(applicationData?.cne)}
     />
   ) : role === "chef-these" ? (
     <SupervisorDashboard
@@ -753,15 +1373,43 @@ export default function App() {
           setRole(selectedRole);
           setDemoMode(isDemo);
           setUserEmail(email);
-          setUserName(
-            isDemo
-              ? "Demo"
-              : email
-                  .split("@")[0]
-                  .split(/[._-]/)
-                  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-                  .join(" ")
-          );
+          const computedName = isDemo
+            ? (selectedRole === "candidat" ? "Candidat Exemple" : `Responsable ${roleLabels[selectedRole]}`)
+            : email
+                .split("@")[0]
+                .split(/[._-]/)
+                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(" ");
+          setUserName(computedName);
+
+          // Restore demo candidate data if applicable
+          if (selectedRole === "candidat") {
+            const existing = candidates.find(
+              (c) => c.email?.toLowerCase() === email.toLowerCase() || (isDemo && (c.fullName === "Candidat Exemple" || c.fullName === "Candidat #001"))
+            );
+            if (existing) {
+              setApplicationData({
+                fullName: existing.fullName,
+                email: existing.email || email,
+                cne: existing.cne,
+                cin: existing.cin || "CD876543",
+                phone: existing.phone || "+212 6 00 00 00 00",
+                address: existing.address || "Fès, Maroc",
+                bacDiploma: existing.bacDiploma || "Baccalauréat Sciences Mathématiques B",
+                bacYear: existing.bacYear || "2020",
+                bacUniversity: existing.bacUniversity || "Lycée d'Excellence, Fès",
+                licenceDiploma: existing.licenceDiploma || "Licence Fondamentale en Informatique",
+                licenceYear: existing.licenceYear || "2023",
+                licenceUniversity: existing.licenceUniversity || "Faculté des Sciences Dhar El Mahraz",
+                masterDiploma: existing.masterDiploma || "Master Recherche Systèmes Intelligents",
+                masterYear: existing.masterYear || "2025",
+                masterUniversity: existing.masterUniversity || "Faculté des Sciences Dhar El Mahraz",
+                selectedSubjects: existing.selectedSubjects || (existing.subject ? [existing.subject] : []),
+                university: existing.university || "Faculté des Sciences Dhar El Mahraz",
+                files: existing.files || {},
+              });
+            }
+          }
           setAuth(true);
         }}
       />
@@ -789,6 +1437,29 @@ export default function App() {
       />
 
       <div className="main-shell">
+        {/* Offline notification banner */}
+        {!isOnline && (
+          <div
+            style={{
+              background: "#b45309",
+              color: "#fff",
+              padding: "9px 18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              fontSize: "12px",
+              fontWeight: 600,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            }}
+          >
+            <WifiOff size={16} />
+            <span>
+              Mode hors-ligne détecté · Vos données et diplômes restent automatiquement conservés en brouillon local.
+            </span>
+          </div>
+        )}
+
         <Header
           role={role}
           userName={userName}
@@ -826,6 +1497,7 @@ export default function App() {
               email={userEmail}
               applicationData={applicationData}
               onNameChange={setUserName}
+              onDeleteCandidate={() => handleDefinitiveDeleteCandidate(applicationData?.cne)}
             />
           )}
         </main>
@@ -836,8 +1508,10 @@ export default function App() {
           initialData={applicationData}
           onClose={() => setApplicationOpen(false)}
           onSubmitted={handleApplicationSubmitted}
+          onDeleteCandidate={() => handleDefinitiveDeleteCandidate(applicationData?.cne)}
         />
       )}
     </div>
   );
 }
+

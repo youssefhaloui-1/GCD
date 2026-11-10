@@ -1,5 +1,15 @@
-import { ChangeEvent, FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  RotateCcw,
+  Trash2,
+  Wifi,
+  WifiOff,
+  X,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import type { AcademicDegree, ApplicationState, AttachedFile, CandidateInfo } from "../../types/doctoral";
 import { mockTopics } from "../../data/mockTopics";
@@ -7,11 +17,13 @@ import Step1Personal from "./steps/Step1Personal";
 import Step2Academic from "./steps/Step2Academic";
 import Step3TopicSelection from "./steps/Step3TopicSelection";
 import Step4Review from "./steps/Step4Review";
+import DeleteConfirmationModal from "../candidate/DeleteConfirmationModal";
 
 type Props = {
   onClose: () => void;
   onSubmitted: (value: ApplicationState) => void;
   initialData?: ApplicationState;
+  onDeleteCandidate?: () => void;
 };
 
 const steps = ["Profil personnel", "Parcours académique", "Choix du sujet", "Résumé et confirmation"];
@@ -22,39 +34,109 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
-export default function RegistrationWizard({ onClose, onSubmitted, initialData }: Props) {
-  const [step, setStep] = useState(1);
+export default function RegistrationWizard({
+  onClose,
+  onSubmitted,
+  initialData,
+  onDeleteCandidate,
+}: Props) {
+  // Check for stored draft if no initialData is passed
+  const savedDraft = (() => {
+    if (initialData) return null;
+    try {
+      const raw = localStorage.getItem("gcd_candidate_draft");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [step, setStep] = useState<number>(() => {
+    if (savedDraft?.step && savedDraft.step >= 1 && savedDraft.step <= 4) {
+      return savedDraft.step;
+    }
+    return 1;
+  });
+
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [personal, setPersonal] = useState<CandidateInfo>({
-    fullName: initialData?.fullName ?? "",
-    email: initialData?.email ?? "",
-    cne: initialData?.cne ?? "",
-    cin: initialData?.cin ?? "",
-    phone: initialData?.phone ?? "",
-    address: initialData?.address ?? "",
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [lastSavedTime, setLastSavedTime] = useState<string>(() => {
+    if (savedDraft?.lastSaved) return savedDraft.lastSaved;
+    return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [draftRestoredBanner, setDraftRestoredBanner] = useState<boolean>(Boolean(savedDraft));
+
+  // Connectivity monitoring
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const [personal, setPersonal] = useState<CandidateInfo>({
+    fullName: initialData?.fullName ?? savedDraft?.personal?.fullName ?? "",
+    email: initialData?.email ?? savedDraft?.personal?.email ?? "",
+    cne: initialData?.cne ?? savedDraft?.personal?.cne ?? "",
+    cin: initialData?.cin ?? savedDraft?.personal?.cin ?? "",
+    phone: initialData?.phone ?? savedDraft?.personal?.phone ?? "",
+    address: initialData?.address ?? savedDraft?.personal?.address ?? "",
+  });
+
   const [degrees, setDegrees] = useState({
     bac: {
-      diploma: initialData?.bacDiploma ?? "",
-      year: initialData?.bacYear ?? "",
-      university: initialData?.bacUniversity ?? "",
+      diploma: initialData?.bacDiploma ?? savedDraft?.degrees?.bac?.diploma ?? "",
+      year: initialData?.bacYear ?? savedDraft?.degrees?.bac?.year ?? "",
+      university: initialData?.bacUniversity ?? savedDraft?.degrees?.bac?.university ?? "",
     },
     licence: {
-      diplence: initialData?.licenceDiploma ?? "",
-      diploma: initialData?.licenceDiploma ?? "",
-      year: initialData?.licenceYear ?? "",
-      university: initialData?.licenceUniversity ?? "",
+      diploma: initialData?.licenceDiploma ?? savedDraft?.degrees?.licence?.diploma ?? "",
+      year: initialData?.licenceYear ?? savedDraft?.degrees?.licence?.year ?? "",
+      university: initialData?.licenceUniversity ?? savedDraft?.degrees?.licence?.university ?? "",
     },
     master: {
-      diploma: initialData?.masterDiploma ?? "",
-      year: initialData?.masterYear ?? "",
-      university: initialData?.masterUniversity ?? "",
+      diploma: initialData?.masterDiploma ?? savedDraft?.degrees?.master?.diploma ?? "",
+      year: initialData?.masterYear ?? savedDraft?.degrees?.master?.year ?? "",
+      university: initialData?.masterUniversity ?? savedDraft?.degrees?.master?.university ?? "",
     },
   });
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(initialData?.selectedSubjects ?? []);
-  const [university, setUniversity] = useState(initialData?.university ?? "");
-  const [files, setFiles] = useState<Record<string, string | AttachedFile>>(initialData?.files ?? {});
+
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(
+    initialData?.selectedSubjects ?? savedDraft?.selectedSubjects ?? []
+  );
+  const [university, setUniversity] = useState(
+    initialData?.university ?? savedDraft?.university ?? ""
+  );
+  const [files, setFiles] = useState<Record<string, string | AttachedFile>>(
+    initialData?.files ?? savedDraft?.files ?? {}
+  );
+
+  // Automatic draft save to localStorage on every state change
+  useEffect(() => {
+    if (submitted) return;
+    const draftPayload = {
+      step,
+      personal,
+      degrees,
+      selectedSubjects,
+      university,
+      files,
+      lastSaved: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      status: "draft",
+    };
+    try {
+      localStorage.setItem("gcd_candidate_draft", JSON.stringify(draftPayload));
+      setLastSavedTime(draftPayload.lastSaved);
+    } catch {
+      // Handle storage quota limit if any large files
+    }
+  }, [step, personal, degrees, selectedSubjects, university, files, submitted]);
 
   const value: ApplicationState = {
     ...personal,
@@ -144,7 +226,27 @@ export default function RegistrationWizard({ onClose, onSubmitted, initialData }
   const submit = (event?: FormEvent) => {
     event?.preventDefault();
     setSubmitted(true);
+    // Remove local draft upon definitive submission
+    try {
+      localStorage.removeItem("gcd_candidate_draft");
+    } catch {
+      // Ignore
+    }
     onSubmitted(value);
+  };
+
+  const handleDefinitiveDelete = () => {
+    try {
+      localStorage.removeItem("gcd_candidate_draft");
+    } catch {
+      // Ignore
+    }
+    setShowDeleteModal(false);
+    if (onDeleteCandidate) {
+      onDeleteCandidate();
+    } else {
+      onClose();
+    }
   };
 
   return (
@@ -157,14 +259,98 @@ export default function RegistrationWizard({ onClose, onSubmitted, initialData }
       >
         <div className="modal-header">
           <div>
-            <p className="eyebrow">CYCLE DOCTORAL USMBA</p>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <p className="eyebrow">CYCLE DOCTORAL USMBA</p>
+              <span className="badge badge-amber" style={{ fontSize: "9px" }}>
+                Brouillon en cours
+              </span>
+              {!isOnline && (
+                <span className="badge badge-red" style={{ fontSize: "9px" }}>
+                  <WifiOff size={10} style={{ display: "inline", marginRight: "3px" }} />
+                  Hors-ligne
+                </span>
+              )}
+            </div>
             <h2>{initialData ? "Modifier ma candidature" : "Nouvelle candidature doctorale"}</h2>
-            <p>Parcours complet : profil, diplômes, justificatifs et sélection des sujets.</p>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "3px", flexWrap: "wrap" }}>
+              <p style={{ color: "var(--muted)", fontSize: "11px" }}>
+                Progression sauvegardée automatiquement à <strong>{lastSavedTime}</strong>.
+              </p>
+              {isOnline ? (
+                <span style={{ fontSize: "10px", color: "#68dda8", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <Wifi size={12} /> Connecté
+                </span>
+              ) : (
+                <span style={{ fontSize: "10px", color: "#ff8296", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <WifiOff size={12} /> Déconnecté · Sauvegarde locale active
+                </span>
+              )}
+            </div>
           </div>
-          <button className="icon-button" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => setShowDeleteModal(true)}
+              style={{ height: "32px", padding: "0 10px", fontSize: "11px", color: "#ff8296" }}
+              title="Supprimer définitivement ce dossier"
+            >
+              <Trash2 size={13} />
+              <span className="hide-mobile">Supprimer</span>
+            </button>
+            <button className="icon-button" onClick={onClose} aria-label="Fermer">
+              <X size={18} />
+            </button>
+          </div>
         </div>
+
+        {/* Offline / Restored Draft Banner */}
+        {!isOnline && (
+          <div
+            style={{
+              padding: "10px 18px",
+              background: "rgba(255, 130, 150, 0.15)",
+              borderBottom: "1px solid rgba(255, 130, 150, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "11px",
+              color: "#ff9aab",
+            }}
+          >
+            <WifiOff size={15} />
+            <span>
+              <strong>Connexion perdue :</strong> Vous êtes actuellement hors-ligne. Toutes vos modifications restent conservées sur votre appareil et seront finalisables dès reconnexion.
+            </span>
+          </div>
+        )}
+
+        {draftRestoredBanner && isOnline && (
+          <div
+            style={{
+              padding: "8px 18px",
+              background: "rgba(105, 117, 245, 0.12)",
+              borderBottom: "1px solid rgba(105, 117, 245, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "11px",
+              color: "#aeb5ff",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <RotateCcw size={13} />
+              <span>Brouillon restauré : vos saisies ont été récupérées là où vous vous étiez arrêté.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDraftRestoredBanner(false)}
+              style={{ background: "transparent", border: 0, color: "var(--muted)", cursor: "pointer" }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {!submitted && (
           <div className="wizard-progress">
@@ -253,6 +439,17 @@ export default function RegistrationWizard({ onClose, onSubmitted, initialData }
           )}
         </form>
       </motion.div>
+
+      {/* Confirmation modal for definitive deletion */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDefinitiveDelete}
+        candidateName={personal.fullName || "Brouillon en cours"}
+        isDraft={true}
+        title="Suppression définitive du brouillon"
+        message="Êtes-vous sûr de vouloir supprimer définitivement ce dossier et toutes les données saisies ? Cette action est irréversible."
+      />
     </div>
   );
 }

@@ -241,7 +241,14 @@ export default function AdminValidationDashboard({
           isVerified={previewDoc.isVerified}
           onToggleVerify={() => {
             onToggleDocumentVerify?.(selected.id, previewDoc.label);
-            setPreviewDoc((prev) => prev ? { ...prev, isVerified: !prev.isVerified } : null);
+            setPreviewDoc((prev) => {
+              if (!prev) return null;
+              const nextVerified = !prev.isVerified;
+              const updatedDoc = typeof prev.doc === "object"
+                ? { ...prev.doc, verified: nextVerified }
+                : { name: prev.doc, verified: nextVerified };
+              return { ...prev, isVerified: nextVerified, doc: updatedDoc };
+            });
           }}
           onClose={() => setPreviewDoc(null)}
         />
