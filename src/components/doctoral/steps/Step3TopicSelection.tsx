@@ -1,0 +1,14 @@
+import { CheckCircle2, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { ThesisTopic } from "../../../types/doctoral";
+
+type Props = { topics: ThesisTopic[]; selected: string[]; university: string; errors: Record<string, string>; onToggle: (id: string) => void; onUniversity: (value: string) => void };
+const universities = ["Faculté des Sciences de Fès", "Faculté des Sciences et Techniques de Fès", "ENSA Fès"];
+
+export default function Step3TopicSelection({ topics, selected, university, errors, onToggle, onUniversity }: Props) {
+  const [query, setQuery] = useState("");
+  const [laboratory, setLaboratory] = useState("");
+  const [cedoc, setCedoc] = useState("");
+  const filtered = useMemo(() => topics.filter((topic) => `${topic.title} ${topic.laboratory} ${topic.cedoc}`.toLowerCase().includes(query.toLowerCase()) && (!laboratory || laboratory === topic.laboratory) && (!cedoc || cedoc === topic.cedoc)), [topics, query, laboratory, cedoc]);
+  return <div className="wizard-section"><div className="wizard-section-heading"><div><h3>Choix du sujet doctoral</h3><p>Choisissez jusqu’à trois sujets par ordre de préférence.</p></div><span className="badge badge-blue">{selected.length} / 3 choix</span></div><div className="topic-toolbar"><div className="search-input"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un sujet, laboratoire ou CEDOC" /></div><select value={laboratory} onChange={(event) => setLaboratory(event.target.value)}><option value="">Tous les laboratoires</option>{Array.from(new Set(topics.map((topic) => topic.laboratory))).map((item) => <option key={item}>{item}</option>)}</select><select value={cedoc} onChange={(event) => setCedoc(event.target.value)}><option value="">Tous les CEDOC</option>{Array.from(new Set(topics.map((topic) => topic.cedoc))).map((item) => <option key={item}>{item}</option>)}</select></div><div className="topic-card-grid">{filtered.map((topic) => <label className={`topic-card ${selected.includes(topic.id) ? "selected" : ""}`} key={topic.id}><input type="checkbox" checked={selected.includes(topic.id)} onChange={() => onToggle(topic.id)} /><div><strong>{topic.title}</strong><span>{topic.laboratory} · {topic.cedoc}</span><small>{topic.supervisor}</small></div>{selected.includes(topic.id) && <CheckCircle2 size={18} />}</label>)}</div><span className="wizard-error">{errors.subjects}</span><label className="wizard-university-label">Université d’accueil<select value={university} onChange={(event) => onUniversity(event.target.value)}><option value="">Sélectionnez une université</option>{universities.map((item) => <option key={item}>{item}</option>)}</select><span className="wizard-error">{errors.university}</span></label></div>;
+}

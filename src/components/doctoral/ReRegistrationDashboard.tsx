@@ -1,0 +1,14 @@
+import { ChangeEvent, useState } from "react";
+import { Check, CheckCircle2, FileText, Upload } from "lucide-react";
+
+const stages = ["Rapport soumis", "Avis de l’encadrant", "Approbation CEDOC", "Validation finale"];
+
+export default function ReRegistrationDashboard() {
+  const [file, setFile] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [message, setMessage] = useState("");
+  const onFile = (event: ChangeEvent<HTMLInputElement>) => { const next = event.target.files?.[0]; if (next) setFile(next.name); };
+  const submit = () => { if (!file) setMessage("Ajoutez le rapport d’avancement au format PDF."); else { setSubmitted(true); setMessage("Rapport transmis à votre encadrant."); } };
+  const active = submitted ? 1 : 0;
+  return <div className="page"><div className="page-heading"><div><p className="eyebrow">ESPACE DOCTORANT · 2026 / 2027</p><h1>Réinscription annuelle</h1><p className="subheading">Déposez votre rapport et suivez le traitement de votre année doctorale.</p></div><span className={`badge badge-${submitted ? "blue" : "amber"}`}>{submitted ? "En cours de validation" : "À compléter"}</span></div><div className="student-dashboard-grid"><section className="card student-progress-card"><div className="section-heading"><div><h2>Progression</h2><p>Les étapes sont mises à jour localement dans cette démonstration.</p></div><span className="completion">{submitted ? "25%" : "0%"}</span></div><div className="annual-tracker">{stages.map((stage, index) => <div className={`annual-stage ${index <= active ? "active" : ""}`} key={stage}><span>{index < active ? <Check size={14} /> : index + 1}</span><div><strong>{stage}</strong><small>{index < active ? "Terminé" : index === active && submitted ? "En cours" : index === 0 ? "En attente de dépôt" : "À venir"}</small></div></div>)}</div><div className="student-status-callout"><CheckCircle2 size={19} /><div><strong>{submitted ? "Rapport soumis" : "Prochaine action : déposer votre rapport"}</strong><p>{message || "PDF uniquement, avec vos travaux réalisés et objectifs pour la prochaine année."}</p></div></div></section><section className="card student-upload-card"><div className="section-heading"><div><h2>Rapport d’avancement annuel</h2><p>PDF, 10 Mo maximum.</p></div><FileText size={20} className="muted-icon" /></div><label className={`student-dropzone ${file ? "uploaded" : ""}`}><Upload size={23} /><strong>{file || "Choisir le rapport d’avancement"}</strong><small>{file ? "Fichier prêt à être transmis" : "Cliquez pour importer votre PDF"}</small><input type="file" accept=".pdf" onChange={onFile} /></label>{message && !submitted && <span className="wizard-error">{message}</span>}<button className="button button-primary button-wide" onClick={submit} disabled={submitted}>{submitted ? "Rapport soumis" : "Transmettre le rapport"}</button></section></div></div>;
+}
