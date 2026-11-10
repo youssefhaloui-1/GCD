@@ -1,0 +1,6 @@
+{
+  "name": "GCD - Gestion du Cycle Doctoral",
+  "description": "Plateforme unifiée de gestion du cycle doctoral de l'USMBA : inscriptions, réinscriptions, suivi des thèses et commissions.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
